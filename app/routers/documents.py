@@ -24,7 +24,16 @@ _service = DocumentService()
 
 def _tenant_id(request: Request) -> str:
     """Extract tenant_id from the request state (set by AuthMiddleware)."""
-    return str(getattr(request.state, "tenant_id", "default"))
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "code": "UNAUTHORIZED",
+                "message": "Missing or invalid tenant authentication context.",
+            },
+        )
+    return str(tenant_id)
 
 
 # ---------------------------------------------------------------------------

@@ -34,8 +34,17 @@ async def run_agent(
     The session_id groups messages into a conversation. Use the same session_id
     across calls to maintain context. Conversations are tenant-isolated.
     """
-    tenant_id: str = http_request.state.tenant_id
+    tenant_id: str = getattr(http_request.state, "tenant_id", "")
     request_id = getattr(http_request.state, "request_id", None)
+    if not tenant_id:
+        raise HTTPException(
+            status_code=401,
+            detail=ErrorResponse(
+                code="UNAUTHORIZED",
+                message="Missing or invalid tenant authentication context.",
+                request_id=request_id,
+            ).model_dump(),
+        )
     try:
         return await agent_service.run(
             session_id=request.session_id,
@@ -64,8 +73,17 @@ async def get_session(
     agent_service: Annotated[AgentService, Depends(get_agent_service)],
 ) -> SessionResponse:
     """Retrieve a session's message history."""
-    tenant_id: str = http_request.state.tenant_id
+    tenant_id: str = getattr(http_request.state, "tenant_id", "")
     request_id = getattr(http_request.state, "request_id", None)
+    if not tenant_id:
+        raise HTTPException(
+            status_code=401,
+            detail=ErrorResponse(
+                code="UNAUTHORIZED",
+                message="Missing or invalid tenant authentication context.",
+                request_id=request_id,
+            ).model_dump(),
+        )
     try:
         session = await agent_service.get_session(session_id, tenant_id)
         if session is None:

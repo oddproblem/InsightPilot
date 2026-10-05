@@ -27,7 +27,9 @@ UPDATE_API_KEY_LAST_USED = """
 """
 
 REVOKE_API_KEY = """
-    UPDATE api_keys SET revoked_at = NOW() WHERE id = %(id)s AND revoked_at IS NULL
+    UPDATE api_keys
+    SET revoked_at = NOW()
+    WHERE id = %(id)s AND tenant_id = %(tenant_id)s AND revoked_at IS NULL
     RETURNING id
 """
 
@@ -58,21 +60,21 @@ GET_SESSION = """
 # ─── Messages ─────────────────────────────────────────────────────────────────
 
 INSERT_MESSAGE = """
-    INSERT INTO agent_messages (id, session_id, role, content, metadata, created_at)
-    VALUES (%(id)s, %(session_id)s, %(role)s, %(content)s, %(metadata)s, NOW())
+    INSERT INTO agent_messages (id, session_id, tenant_id, role, content, metadata, created_at)
+    VALUES (%(id)s, %(session_id)s, %(tenant_id)s, %(role)s, %(content)s, %(metadata)s, NOW())
 """
 
 GET_SESSION_MESSAGES = """
-    SELECT id, session_id, role, content, metadata, created_at
+    SELECT id, session_id, tenant_id, role, content, metadata, created_at
     FROM agent_messages
-    WHERE session_id = %(session_id)s
+    WHERE session_id = %(session_id)s AND tenant_id = %(tenant_id)s
     ORDER BY created_at ASC
 """
 
 INCREMENT_SESSION_MESSAGE_COUNT = """
     UPDATE agent_sessions
     SET message_count = message_count + 1, last_active_at = NOW()
-    WHERE session_id = %(session_id)s
+    WHERE session_id = %(session_id)s AND tenant_id = %(tenant_id)s
 """
 
 # ─── Documents ────────────────────────────────────────────────────────────────

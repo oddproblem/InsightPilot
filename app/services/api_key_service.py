@@ -108,7 +108,7 @@ class ApiKeyService:
         """Revoke a key by UUID. Returns True if revoked, False if not found or already revoked."""
         with db_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute(REVOKE_API_KEY, {"id": key_id})
+                cur.execute(REVOKE_API_KEY, {"id": key_id, "tenant_id": tenant_id})
                 row = cur.fetchone()
         return row is not None
 

@@ -35,11 +35,16 @@ class AgentService:
         """Run the agent for a single turn.
 
         1. Upsert the session record
-        2. Load full message history
+        2. Load full message history strictly for this tenant
         3. Invoke the graph (sync, via run_in_executor)
-        4. Persist user + assistant messages
+        4. Persist user + assistant messages with tenant_id
         5. Return structured response with token usage
         """
+        if not tenant_id or not tenant_id.strip():
+            raise ValueError("tenant_id is required and cannot be empty")
+        if not session_id or not session_id.strip():
+            raise ValueError("session_id is required and cannot be empty")
+
         # 1. Ensure session exists
         session_uuid = str(uuid.uuid4())
         with db_conn() as conn:
@@ -53,15 +58,18 @@ class AgentService:
                     },
                 )
 
-        # 2. Load message history
+        # 2. Load message history strictly for this session and tenant
         history: list[BaseMessage] = []
         with db_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute(GET_SESSION_MESSAGES, {"session_id": session_id})
+                cur.execute(
+                    GET_SESSION_MESSAGES,
+                    {"session_id": session_id, "tenant_id": tenant_id},
+                )
                 rows = cur.fetchall()
 
         for row in rows:
-            _msg_id, _sid, role, content, _meta, _created = row
+            _msg_id, _sid, _tid, role, content, _meta, _created = row
             if role == "user":
                 history.append(HumanMessage(content=content))
             elif role in ("assistant", "tool"):
@@ -103,7 +111,7 @@ class AgentService:
                 final_response = str(msg.content)
                 break
 
-        # 5. Persist messages
+        # 5. Persist messages with tenant_id isolation
         user_msg_id = str(uuid.uuid4())
         asst_msg_id = str(uuid.uuid4())
 
@@ -114,6 +122,7 @@ class AgentService:
                     {
                         "id": user_msg_id,
                         "session_id": session_id,
+                        "tenant_id": tenant_id,
                         "role": "user",
                         "content": message,
                         "metadata": json.dumps({}),
@@ -124,14 +133,21 @@ class AgentService:
                     {
                         "id": asst_msg_id,
                         "session_id": session_id,
+                        "tenant_id": tenant_id,
                         "role": "assistant",
                         "content": final_response,
                         "metadata": json.dumps({"run_id": run_id}),
                     },
                 )
-                # Increment twice: once for user, once for assistant
-                cur.execute(INCREMENT_SESSION_MESSAGE_COUNT, {"session_id": session_id})
-                cur.execute(INCREMENT_SESSION_MESSAGE_COUNT, {"session_id": session_id})
+                # Increment twice: once for user, once for assistant, scoped by tenant_id
+                cur.execute(
+                    INCREMENT_SESSION_MESSAGE_COUNT,
+                    {"session_id": session_id, "tenant_id": tenant_id},
+                )
+                cur.execute(
+                    INCREMENT_SESSION_MESSAGE_COUNT,
+                    {"session_id": session_id, "tenant_id": tenant_id},
+                )
 
         return RunAgentResponse(
             session_id=session_id,
@@ -149,6 +165,11 @@ class AgentService:
         tenant_id: str,
     ) -> SessionResponse | None:
         """Load a session and all its messages. Returns None if not found."""
+        if not tenant_id or not tenant_id.strip():
+            raise ValueError("tenant_id is required and cannot be empty")
+        if not session_id or not session_id.strip():
+            raise ValueError("session_id is required and cannot be empty")
+
         with db_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute(GET_SESSION, {"session_id": session_id, "tenant_id": tenant_id})
@@ -161,12 +182,15 @@ class AgentService:
 
         with db_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute(GET_SESSION_MESSAGES, {"session_id": session_id})
+                cur.execute(
+                    GET_SESSION_MESSAGES,
+                    {"session_id": session_id, "tenant_id": tenant_id},
+                )
                 msg_rows = cur.fetchall()
 
         messages = [
             MessageResponse(role=role, content=content, created_at=created_at_msg)
-            for _msg_id, _sid, role, content, _meta, created_at_msg in msg_rows
+            for _msg_id, _sid, _tid, role, content, _meta, created_at_msg in msg_rows
         ]
 
         return SessionResponse(
