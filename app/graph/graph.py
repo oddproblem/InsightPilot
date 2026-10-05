@@ -1,47 +1,75 @@
-# EXTENSION POINT: Add nodes and edges to modify the graph structure.
-# To add a node: builder.add_node("your_node_name", your_node_function)
-# To add an edge: builder.add_edge("from_node", "to_node")
-# To add conditional routing: builder.add_conditional_edges(...)
-#
-# To swap the entire graph: implement your own build_graph() function
-# and call it in init_graph(). The rest of the app uses get_graph()
-# and does not care what the graph contains.
+"""InsightPilot compiled LangGraph agent graph.
+
+Pipeline topology:
+  query_analyzer
+      │
+      ├─(route == document_search | web_search | calculator)─► tool_dispatch
+      │                                                              │
+      └─(route == direct)───────────────────────────────────────────┘
+                                                                     │
+                                                              answer_generator
+                                                                     │
+                                                           citation_validator
+                                                                     │
+                                                              safety_check
+                                                                     │
+                                                                    END
+"""
 
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.prebuilt import ToolNode
 
-from app.graph.nodes import call_model, retrieve_context, should_continue
+from app.graph.nodes import (
+    answer_generator,
+    citation_validator,
+    query_analyzer,
+    route_after_analyzer,
+    safety_check,
+    tool_dispatch,
+)
 from app.graph.state import AgentState
-from app.graph.tools import TOOLS
 
 
 def build_graph() -> CompiledStateGraph[AgentState, None, AgentState, AgentState]:
-    """Build and compile the agent graph.
-
-    Graph flow:
-      retrieve (fetch context) → agent (LLM call) → [tools? → agent] → END
-    """
+    """Build and compile the InsightPilot agent graph."""
     builder: StateGraph[AgentState, None, AgentState, AgentState] = StateGraph(AgentState)
 
-    builder.add_node("retrieve", retrieve_context)
-    builder.add_node("agent", call_model)
-    builder.add_node("tools", ToolNode(TOOLS))
+    # ── Nodes ─────────────────────────────────────────────────────────────────
+    builder.add_node("query_analyzer", query_analyzer)
+    builder.add_node("tool_dispatch", tool_dispatch)
+    builder.add_node("answer_generator", answer_generator)
+    builder.add_node("citation_validator", citation_validator)
+    builder.add_node("safety_check", safety_check)
 
-    builder.set_entry_point("retrieve")
-    builder.add_edge("retrieve", "agent")
+    # ── Edges ─────────────────────────────────────────────────────────────────
+    builder.set_entry_point("query_analyzer")
+
+    # After classification: tool-using routes go to tool_dispatch; direct → answer_generator
     builder.add_conditional_edges(
-        "agent",
-        should_continue,
-        {"tools": "tools", "end": END},
+        "query_analyzer",
+        route_after_analyzer,
+        {
+            "tool_dispatch": "tool_dispatch",
+            "answer_generator": "answer_generator",
+        },
     )
-    builder.add_edge("tools", "agent")
+
+    # Tool results always flow into answer_generator
+    builder.add_edge("tool_dispatch", "answer_generator")
+
+    # Linear synthesis pipeline
+    builder.add_edge("answer_generator", "citation_validator")
+    builder.add_edge("citation_validator", "safety_check")
+    builder.add_edge("safety_check", END)
 
     return builder.compile()
 
 
 # Module-level compiled graph — initialized once at startup via init_graph().
 _graph: CompiledStateGraph[AgentState, None, AgentState, AgentState] | None = None
+
+# Pre-compiled graph instance for testing and direct invocation
+app_graph: CompiledStateGraph[AgentState, None, AgentState, AgentState] = build_graph()
 
 
 def get_graph() -> CompiledStateGraph[AgentState, None, AgentState, AgentState]:

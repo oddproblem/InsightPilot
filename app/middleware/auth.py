@@ -4,8 +4,10 @@
 # To add JWT: decode and verify here, populate request.state.tenant_id from claims.
 
 import json
+from typing import cast
 
-from fastapi import Request, Response
+from fastapi import Depends, HTTPException, Request, Response
+from fastapi.params import Depends as DependsClass
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import JSONResponse
 
@@ -18,6 +20,11 @@ _PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("GET", "/docs"),
     ("GET", "/openapi.json"),
     ("GET", "/redoc"),
+    ("GET", "/"),
+    ("GET", "/index.html"),
+    ("GET", "/style.css"),
+    ("GET", "/app.js"),
+    ("GET", "/favicon.ico"),
 }
 
 # Routes that require admin role (checked after auth passes)
@@ -36,14 +43,12 @@ def _is_admin_route(method: str, path: str) -> bool:
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         method = request.method
         path = request.url.path
 
-        # Skip auth for public routes
-        if (method, path) in _PUBLIC_ROUTES:
+        # Skip auth for public routes and static UI assets
+        if (method, path) in _PUBLIC_ROUTES or path.startswith(("/static", "/assets")):
             return await call_next(request)
 
         # Extract Bearer token
@@ -59,7 +64,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 ),
             )
 
-        token = auth_header[len("Bearer "):]
+        token = auth_header[len("Bearer ") :]
         validated = api_key_service.validate_key(token)
 
         if validated is None:
@@ -90,3 +95,33 @@ class AuthMiddleware(BaseHTTPMiddleware):
             )
 
         return await call_next(request)
+
+
+def require_role(minimum_role: str = "user") -> DependsClass:
+    """FastAPI dependency factory that enforces a minimum role on an endpoint.
+
+    Usage:
+        @router.post("/...", dependencies=[Depends(require_role("admin"))])
+
+    Roles in ascending permission order: user < admin
+    """
+    _role_rank = {"user": 0, "admin": 1}
+
+    async def _check(request: Request) -> None:
+        api_key = getattr(request.state, "api_key", None)
+        if api_key is None:
+            raise HTTPException(
+                status_code=401,
+                detail={"code": "UNAUTHENTICATED", "message": "Authentication required."},
+            )
+        key_role = getattr(api_key, "role", "user")
+        if _role_rank.get(key_role, 0) < _role_rank.get(minimum_role, 0):
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "INSUFFICIENT_PERMISSIONS",
+                    "message": f"This endpoint requires '{minimum_role}' role.",
+                },
+            )
+
+    return cast(DependsClass, Depends(_check))

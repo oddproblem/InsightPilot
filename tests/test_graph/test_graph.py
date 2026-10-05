@@ -33,3 +33,17 @@ def test_init_graph_sets_graph(_patch_config: None) -> None:
         assert graph is not None
     finally:
         graph_module._graph = original
+
+
+def test_graph_contains_all_pipeline_nodes(_patch_config: None) -> None:
+    """Compiled graph must contain the five InsightPilot pipeline nodes."""
+    graph = build_graph()
+    node_names = set(graph.nodes.keys())
+    expected = {
+        "query_analyzer",
+        "tool_dispatch",
+        "answer_generator",
+        "citation_validator",
+        "safety_check",
+    }
+    assert expected.issubset(node_names), f"Missing nodes: {expected - node_names}"

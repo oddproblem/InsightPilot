@@ -11,11 +11,17 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Override the sqlalchemy.url with DATABASE_URL env var if set
-# This allows alembic to run against any database without editing alembic.ini
-database_url = os.environ.get("DATABASE_URL")
+# Override the sqlalchemy.url with DATABASE_URL env var or app.config database_url
+# This allows alembic to run against the configured database without hardcoded port
+from app.config import config as app_cfg
+
+database_url = os.environ.get("DATABASE_URL") or app_cfg.database_url
 if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+    if database_url.startswith("postgresql://"):
+        db_url_alembic = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    else:
+        db_url_alembic = database_url
+    config.set_main_option("sqlalchemy.url", db_url_alembic)
 
 
 def run_migrations_offline() -> None:

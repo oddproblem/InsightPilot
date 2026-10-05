@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InsightPilot — Financial Document Intelligence & Reasoning Agent</title>
+  <meta name="description" content="InsightPilot is an agentic document intelligence system built for analyzing complex 10-K, 10-Q, and corporate earnings reports with verified citations and calculation tools.">
+  <meta name="theme-color" content="#0a0f18">
+  <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar" role="banner">
+    <div class="nav-brand">
+      <img src="assets/logo.jpg" alt="InsightPilot Geometric Beacon Logo" class="brand-logo" id="brand-logo-img">
+      <div class="brand-text">
+        <h1>InsightPilot</h1>
+        <div class="brand-tag">Financial Intelligence Agent</div>
+      </div>
+    </div>
+
+    <div class="nav-status">
+      <div class="badge-status" id="system-status-indicator">
+        <span class="status-dot"></span>
+        <span id="system-status-text">Agent Online</span>
+      </div>
+      <div class="badge-status" style="background: rgba(6, 182, 212, 0.1); color: var(--text-cyan); border-color: rgba(6, 182, 212, 0.25);">
+        <span>Tenant: <strong id="active-tenant-label">default</strong></span>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <button class="btn btn-secondary btn-sm" id="btn-api-config" title="Settings & API Key">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Config
+      </button>
+      <a href="/docs" target="_blank" class="btn btn-secondary btn-sm" id="btn-api-docs" title="API OpenAPI Documentation">
+        API Docs
+      </a>
+    </div>
+  </header>
+
+  <!-- Application Main Body -->
+  <main class="app-container" id="app-workspace">
+
+    <!-- Left Sidebar: Document Ingestion & Corpus -->
+    <aside class="sidebar" aria-label="Financial Documents Library">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Document Corpus
+        </h2>
+        <span class="badge-status" id="doc-count-badge">3 Docs</span>
+      </div>
+
+      <!-- Drag & Drop Ingestion -->
+      <section aria-labelledby="upload-heading">
+        <div class="dropzone" id="file-dropzone" role="button" tabindex="0" aria-label="Drop 10-K or financial text report here">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <div class="dropzone-title" id="upload-heading">Upload Financial Filing</div>
+          <div class="dropzone-hint">Drag & drop PDF, TXT, or MD (max 20MB)</div>
+          <input type="file" id="file-picker-input" class="file-input" accept=".txt,.pdf,.md">
+        </div>
+
+        <div class="upload-meta" id="upload-meta-fields">
+          <div class="input-group">
+            <label class="input-label" for="doc-company-input">Company Name</label>
+            <input type="text" id="doc-company-input" class="input-control" placeholder="e.g. Acme Corp, Apple, Microsoft">
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="doc-year-input">Financial Period</label>
+            <input type="text" id="doc-year-input" class="input-control" placeholder="e.g. FY2025, Q4 2024">
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-submit-upload" style="margin-top: 0.35rem; justify-content: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Ingest & Index
+          </button>
+        </div>
+      </section>
+
+      <!-- Document Inventory List -->
+      <section style="display: flex; flex-direction: column; gap: 0.65rem; flex: 1; overflow: hidden;" aria-label="Indexed Documents">
+        <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+          Active Tenant Index
+        </div>
+        <div class="doc-list" id="documents-container" role="list">
+          <!-- Dynamically populated doc cards -->
+        </div>
+      </section>
+    </aside>
+
+    <!-- Center Stage: Agent Chat & Reasoning Pipeline -->
+    <main class="chat-stage" role="region" aria-label="Agent Conversation & Reasoning">
+      <!-- Session Bar -->
+      <div class="chat-banner">
+        <div class="banner-left">
+          <div class="session-info">
+            Session: <span class="session-id-pill" id="session-display-id">sess-default-01</span>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-dim);">•</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);" id="token-usage-counter">0 tokens</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm" id="btn-clear-chat" title="Start New Session">
+            New Session
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages Stream -->
+      <div class="messages-container" id="chat-messages-stream" role="log" aria-live="polite">
+        <!-- Welcoming Hero Card -->
+        <div class="assistant-card" id="welcome-card">
+          <div class="reasoning-trail">
+            <span class="reasoning-pill pill-guard-pass">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              Input & Output Guards Active
+            </span>
+            <span class="reasoning-pill pill-route-doc">pgvector Isolated</span>
+            <span class="reasoning-pill pill-route-calc">Sandboxed Math</span>
+          </div>
+
+          <div class="answer-content">
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem; color: #ffffff;">
+              InsightPilot Financial Reasoning Agent
+            </h2>
+            <p>
+              I am an autonomous document intelligence assistant designed for financial analysis (10-K, 10-Q, quarterly earnings, and balance sheets).
+            </p>
+            <p>
+              I route queries through an intelligent multi-stage reasoning pipeline: classifying intent, retrieving vector evidence with strict tenant isolation, evaluating math expressions via a safe calculator, and verifying citations line-by-line before generation.
+            </p>
+          </div>
+
+          <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-top: 0.25rem;">
+            Recommended benchmark inquiries:
+          </div>
+          <div class="quick-prompts" id="quick-prompt-chips">
+            <button class="prompt-chip" data-prompt="Why did operating margin decline?">
+              📉 Why did operating margin decline?
+            </button>
+            <button class="prompt-chip" data-prompt="Calculate the CAGR from 2022 to 2025 given initial revenue of $30B and final revenue of $42.5B.">
+              🧮 Calculate CAGR 2022-2025 ($30B to $42.5B)
+            </button>
+            <button class="prompt-chip" data-prompt="What was revenue in FY2025?">
+              📊 What was revenue in FY2025?
+            </button>
+            <button class="prompt-chip" data-prompt="Compare revenue growth between 2024 and 2025.">
+              ⚖️ Compare revenue growth 2024 vs 2025
+            </button>
+            <button class="prompt-chip" data-prompt="Is there enough information to answer what the CEO bonus was in 2025?">
+              🛡️ Test Hallucination Refusal (CEO Bonus)
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat messages appended dynamically here -->
+      </div>
+
+      <!-- Chat Input Area -->
+      <footer class="chat-input-area">
+        <form class="input-box-wrapper" id="chat-input-form" onsubmit="return false;">
+          <input type="text" class="chat-input" id="chat-query-input" placeholder="Ask a financial or document question... (Press Enter to submit)" autocomplete="off">
+          <button type="submit" class="btn btn-primary" id="btn-send-message">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Analyze
+          </button>
+        </form>
+        <div class="input-hint">
+          <span>Routing: Document Search • Calculator • Web Search • Direct</span>
+          <span>Security Guardrails: Active</span>
+        </div>
+      </footer>
+    </main>
+
+    <!-- Right Drawer: Citation & Source Inspector -->
+    <aside class="inspector-panel" id="citation-inspector-drawer" aria-label="Evidence & Citation Inspector">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Citation Inspector
+        </h2>
+        <span class="badge-status" id="evidence-count-badge" style="background: rgba(6, 182, 212, 0.1); color: var(--text-cyan); border-color: rgba(6, 182, 212, 0.2);">
+          Verified
+        </span>
+      </div>
+
+      <div id="inspector-content-area">
+        <div class="citation-empty-state" id="citation-empty-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <div style="font-size: 0.85rem; font-weight: 500;">No Citation Selected</div>
+          <div style="font-size: 0.75rem;">Click on any citation footnote <span class="citation-link">[1]</span> in the agent's response to inspect the grounded source passage.</div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Configuration Modal -->
+  <div class="modal-overlay" id="config-modal" role="dialog" aria-modal="true" aria-labelledby="modal-settings-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-settings-title">Agent System Configuration</h3>
+        <button class="btn-icon" id="btn-close-modal" aria-label="Close settings modal">✕</button>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="cfg-api-key">Bearer API Key</label>
+        <input type="password" id="cfg-api-key" class="input-control" placeholder="sk-...">
+        <span style="font-size: 0.7rem; color: var(--text-dim);">Keys are stored with bcrypt and validated in O(1) via SHA-256 hash lookup.</span>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="cfg-tenant-id">Tenant ID (Data Boundary)</label>
+        <input type="text" id="cfg-tenant-id" class="input-control" value="default" placeholder="default">
+        <span style="font-size: 0.7rem; color: var(--text-dim);">Strict tenant partition enforced across all pgvector queries.</span>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="cfg-api-base">Backend API Endpoint</label>
+        <input type="text" id="cfg-api-base" class="input-control" value="http://localhost:8000">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.65rem; margin-top: 0.5rem;">
+        <button class="btn btn-secondary" id="btn-cancel-modal">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-modal">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

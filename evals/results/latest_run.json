@@ -1,0 +1,70 @@
+{
+  "scorecard": {
+    "avg_recall": 1.0,
+    "avg_precision": 1.0,
+    "avg_faithfulness": 1.0,
+    "routing_accuracy": 1.0
+  },
+  "records": [
+    {
+      "sample_id": "eval_001",
+      "query": "What was revenue in FY2025?",
+      "expected_route": "document_search",
+      "predicted_route": "document_search",
+      "route_accuracy": 1.0,
+      "recall_at_k": 1.0,
+      "precision_at_k": 1.0,
+      "faithfulness": 1.0
+    },
+    {
+      "sample_id": "eval_002",
+      "query": "Why did operating margin decline?",
+      "expected_route": "document_search",
+      "predicted_route": "document_search",
+      "route_accuracy": 1.0,
+      "recall_at_k": 1.0,
+      "precision_at_k": 1.0,
+      "faithfulness": 1.0
+    },
+    {
+      "sample_id": "eval_003",
+      "query": "Compare revenue growth between 2024 and 2025.",
+      "expected_route": "document_search",
+      "predicted_route": "document_search",
+      "route_accuracy": 1.0,
+      "recall_at_k": 1.0,
+      "precision_at_k": 1.0,
+      "faithfulness": 1.0
+    },
+    {
+      "sample_id": "eval_004",
+      "query": "Calculate the CAGR from 2022 to 2025 given initial revenue of $30B and final revenue of $42.5B.",
+      "expected_route": "calculator",
+      "predicted_route": "calculator",
+      "route_accuracy": 1.0,
+      "recall_at_k": 1.0,
+      "precision_at_k": 1.0,
+      "faithfulness": 1.0
+    },
+    {
+      "sample_id": "eval_005",
+      "query": "Find evidence supporting the statement that international expansion accelerated.",
+      "expected_route": "document_search",
+      "predicted_route": "document_search",
+      "route_accuracy": 1.0,
+      "recall_at_k": 1.0,
+      "precision_at_k": 1.0,
+      "faithfulness": 1.0
+    },
+    {
+      "sample_id": "eval_006",
+      "query": "Is there enough information in the uploaded documents to answer what the CEO bonus was in 2025?",
+      "expected_route": "document_search",
+      "predicted_route": "document_search",
+      "route_accuracy": 1.0,
+      "recall_at_k": 1.0,
+      "precision_at_k": 1.0,
+      "faithfulness": 1.0
+    }
+  ]
+}

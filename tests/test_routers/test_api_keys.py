@@ -40,9 +40,7 @@ async def test_missing_auth_returns_401(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_revoke_key(
-    client: AsyncClient, admin_key_header: dict[str, str]
-) -> None:
+async def test_revoke_key(client: AsyncClient, admin_key_header: dict[str, str]) -> None:
     # Create a key
     create_resp = await client.post(
         "/v1/keys",
@@ -66,9 +64,7 @@ async def test_revoke_key(
 
 
 @pytest.mark.asyncio
-async def test_list_keys(
-    client: AsyncClient, admin_key_header: dict[str, str]
-) -> None:
+async def test_list_keys(client: AsyncClient, admin_key_header: dict[str, str]) -> None:
     response = await client.get("/v1/keys", headers=admin_key_header)
     assert response.status_code == 200
     body = response.json()

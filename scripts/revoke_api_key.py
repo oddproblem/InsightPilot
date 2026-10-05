@@ -17,9 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 def main() -> int:
     parser = argparse.ArgumentParser(description="Revoke an API key by UUID")
     parser.add_argument("--id", required=True, help="UUID of the key to revoke")
-    parser.add_argument(
-        "--yes", action="store_true", help="Skip confirmation prompt"
-    )
+    parser.add_argument("--yes", action="store_true", help="Skip confirmation prompt")
     args = parser.parse_args()
 
     if not args.yes:

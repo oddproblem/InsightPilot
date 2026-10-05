@@ -1,9 +1,11 @@
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import config
 from app.db.connection import close_pool, init_pool
@@ -13,6 +15,7 @@ from app.middleware.logging import LoggingMiddleware, _setup_logging
 from app.models.responses import ErrorResponse
 from app.routers.agents import router as agents_router
 from app.routers.api_keys import router as keys_router
+from app.routers.documents import router as documents_router
 from app.routers.health import router as health_router
 
 APP_VERSION = "0.1.0"
@@ -37,7 +40,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="LangGraph FastAPI Starter",
+        title="InsightPilot",
         version=APP_VERSION,
         docs_url=None if config.is_production else "/docs",
         redoc_url=None if config.is_production else "/redoc",
@@ -51,7 +54,28 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(agents_router)
+    app.include_router(documents_router)
     app.include_router(keys_router)
+
+    # Mount frontend UI assets if present
+    frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
+    if frontend_dir.exists():
+        assets_dir = frontend_dir / "assets"
+        if assets_dir.exists():
+            app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+        app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
+
+        @app.get("/", include_in_schema=False)
+        async def serve_index() -> FileResponse:
+            index_file = frontend_dir / "index.html"
+            return FileResponse(index_file)
+
+        @app.get("/{file_name}", include_in_schema=False)
+        async def serve_static_root_file(file_name: str) -> FileResponse:
+            target = frontend_dir / file_name
+            if target.is_file():
+                return FileResponse(target)
+            raise HTTPException(status_code=404, detail="Not Found")
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:

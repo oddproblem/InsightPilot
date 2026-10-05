@@ -16,6 +16,7 @@ def main() -> int:
     try:
         with urllib.request.urlopen("http://localhost:8000/health", timeout=5) as resp:
             import json
+
             body = json.loads(resp.read())
             if body.get("status") == "ok":
                 return 0

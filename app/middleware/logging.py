@@ -50,10 +50,27 @@ class _JsonFormatter(logging.Formatter):
         # Merge extra fields (passed via logger.info("event", extra={...}))
         for key, value in record.__dict__.items():
             if key not in (
-                "name", "msg", "args", "levelname", "levelno", "pathname",
-                "filename", "module", "exc_info", "exc_text", "stack_info",
-                "lineno", "funcName", "created", "msecs", "relativeCreated",
-                "thread", "threadName", "processName", "process", "message",
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "message",
                 "taskName",
             ):
                 payload[key] = value
@@ -67,9 +84,7 @@ class _JsonFormatter(logging.Formatter):
 class LoggingMiddleware(BaseHTTPMiddleware):
     """Injects a request_id, attaches it to request.state, and logs each request."""
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id = uuid.uuid4().hex[:16]
         request.state.request_id = request_id
 

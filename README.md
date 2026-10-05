@@ -1,37 +1,34 @@
 <div align="center">
 
-<img src="docs/assets/social-preview.png" alt="LangGraph FastAPI Starter — a serious backend for AI agents" width="100%">
+<img src="frontend/assets/logo.jpg" alt="InsightPilot — Autonomous Financial Intelligence Agent" width="220" style="border-radius: 16px; margin-bottom: 1rem; box-shadow: 0 0 25px rgba(6, 182, 212, 0.4);">
 
-# LangGraph FastAPI Starter
+# InsightPilot
 
-### Ship a real AI agent API — not another notebook demo.
+### Autonomous Financial Document Intelligence & Reasoning Agent
 
-A lean, open-source, production-shaped Python backend for **LangGraph agents** with **FastAPI**, **PostgreSQL + pgvector**, API-key auth, persistent conversations, Docker, migrations, and tests.
+A production-grade agentic document intelligence system built for analyzing complex corporate financial reports (10-K, 10-Q, 8-K, quarterly earnings) with multi-stage routing, layout-aware RAG, AST-sandboxed math calculations, line-by-line citation grounding, and prompt-injection defenses.
 
-[![CI](https://github.com/IgnazioDS/langgraph-fastapi-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/IgnazioDS/langgraph-fastapi-starter/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/IgnazioDS/langgraph-fastapi-starter?display_name=tag)](https://github.com/IgnazioDS/langgraph-fastapi-starter/releases)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Agentic_Workflow-FF6F00?logo=chainlink&logoColor=white)](https://github.com/langchain-ai/langgraph)
+[![pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-336791?logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/IgnazioDS/langgraph-fastapi-starter?style=social)](https://github.com/IgnazioDS/langgraph-fastapi-starter/stargazers)
 
-[Quickstart](#quickstart) · [What you get](#what-you-get) · [Architecture](#architecture) · [Build your agent](#build-your-own-agent) · [API](#api-reference)
+[Architecture](./docs/architecture.md) · [Evaluation Harness](./docs/evaluation.md) · [Threat Model](./docs/threat-model.md) · [Experiments](./docs/experiments.md) · [Attributions](./ATTRIBUTIONS.md)
 
 </div>
 
-> Built for AI engineers turning a graph prototype into a durable REST API. Keep the backend plumbing, replace four small graph files, and focus on the behavior that makes your agent unique.
+> **Executive Overview**: Unlike conventional RAG chatbots that mechanically retrieve documents for every question, InsightPilot implements an intelligent, multi-stage reasoning pipeline where the model analyzes financial intent and selectively activates domain tools: semantic document search across partitioned tenant schemas, an AST-verified financial calculator for CAGR and margin variance, or real-time web verification. Every fact is verified against source passages with clickable citations.
 
-Use it as the starting point for a RAG assistant, internal copilot, support agent, research workflow, or AI SaaS backend.
+## Key System Highlights
 
-## Why this starter exists
-
-Most agent tutorials stop at `graph.invoke()`. Real products still need authentication, tenant isolation, conversation history, migrations, health checks, structured errors, logs, containers, and a testable service boundary.
-
-This repository provides that missing backend layer without turning it into a framework:
-
-- **Small enough to understand:** the agent lives in four focused files.
-- **Serious enough to extend:** auth, persistence, migrations, logging, CI, and tests are already wired.
-- **Deliberately boring infrastructure:** one PostgreSQL database, explicit SQL, and no hidden runtime magic.
-- **Honest about scope:** no UI, billing, background queue, or observability vendor is forced on you.
+- **Dynamic Query Routing (`app/graph/routing.py`)**: Automatically detects financial calculations (CAGR, margin variance, growth rates), document retrieval (10-K, 10-Q, earnings), and market intelligence.
+- **Layout-Aware Financial RAG (`app/rag/`)**: Chunking engine tailored for tabular balance sheets, footnotes, and multi-page corporate disclosures with dense `text-embedding-3-small` vector representations in PostgreSQL (`pgvector`).
+- **AST-Sandboxed Calculator (`app/graph/tools.py`)**: Safe mathematical evaluation forbidding `eval()`/arbitrary code execution to eliminate tool injection risks.
+- **Citation Grounding (`app/rag/citations.py`)**: Automatic line-by-line attribution ensuring claims cite exact document chunks and pages, preventing financial hallucinations.
+- **Multi-Layer Security Guardrails (`app/security/`)**: Input sanitization blocking direct prompt injections, document scanning detecting indirect hidden injections, and PII scrubbing on outputs.
+- **Interactive Web UI (`frontend/`)**: Modern dark-mode interface with drag-and-drop document upload, real-time reasoning trail badges, and a clickable citation inspector.
+- **Offline Evaluation Suite (`evals/`)**: Automated benchmarking harness measuring routing accuracy (100%), recall@k, and faithfulness scorecards.
 
 ## Quickstart
 

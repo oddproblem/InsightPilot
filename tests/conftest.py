@@ -53,9 +53,7 @@ async def client(_app_runtime: None) -> AsyncGenerator[AsyncClient, None]:
     from app.main import create_app
 
     application = create_app()
-    async with AsyncClient(
-        transport=ASGITransport(app=application), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=application), base_url="http://test") as ac:
         yield ac
 
 
@@ -67,9 +65,7 @@ async def admin_key(client: AsyncClient, _app_runtime: None) -> str:
     from app.services.api_key_service import ApiKeyService
 
     service = ApiKeyService()
-    plaintext, _ = service.create_key(
-        name="test-admin", role="admin", tenant_id="default"
-    )
+    plaintext, _ = service.create_key(name="test-admin", role="admin", tenant_id="default")
     return plaintext
 
 
@@ -109,3 +105,18 @@ def mock_openai() -> Generator[MagicMock, None, None]:
 
     with patch("app.graph.nodes.ChatOpenAI", return_value=mock_llm):
         yield mock_llm
+
+
+@pytest.fixture
+def mock_openai_embeddings() -> MagicMock:
+    """Return a fake OpenAI client whose embeddings.create yields a zero 1536-dim vector."""
+    fake_embedding = MagicMock()
+    fake_embedding.embedding = [0.0] * 1536
+
+    fake_response = MagicMock()
+    fake_response.data = [fake_embedding]
+
+    mock_client = MagicMock()
+    mock_client.embeddings.create.return_value = fake_response
+    mock_client.return_value = mock_client  # so OpenAI(...) returns mock_client
+    return mock_client

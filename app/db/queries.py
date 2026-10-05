@@ -74,3 +74,56 @@ INCREMENT_SESSION_MESSAGE_COUNT = """
     SET message_count = message_count + 1, last_active_at = NOW()
     WHERE session_id = %(session_id)s
 """
+
+# ─── Documents ────────────────────────────────────────────────────────────────
+
+INSERT_DOCUMENT_CHUNK = """
+    INSERT INTO documents (
+        id, tenant_id, document_id, document_name, source,
+        content, page_number, chunk_index, doc_type, company,
+        financial_year, upload_date, metadata, embedding, created_at
+    )
+    VALUES (
+        %(id)s, %(tenant_id)s, %(document_id)s, %(document_name)s, %(source)s,
+        %(content)s, %(page_number)s, %(chunk_index)s, %(doc_type)s, %(company)s,
+        %(financial_year)s, NOW(), %(metadata)s, %(embedding)s::vector, NOW()
+    )
+"""
+
+GET_DOCUMENT_BY_ID = """
+    SELECT
+        document_id,
+        document_name,
+        source,
+        doc_type,
+        company,
+        financial_year,
+        MIN(upload_date) AS upload_date,
+        COUNT(*) AS chunk_count,
+        MAX(page_number) AS page_count
+    FROM documents
+    WHERE document_id = %(document_id)s AND tenant_id = %(tenant_id)s
+    GROUP BY document_id, document_name, source, doc_type, company, financial_year
+"""
+
+LIST_DOCUMENTS = """
+    SELECT
+        document_id,
+        document_name,
+        source,
+        doc_type,
+        company,
+        financial_year,
+        MIN(upload_date) AS upload_date,
+        COUNT(*) AS chunk_count,
+        MAX(page_number) AS page_count
+    FROM documents
+    WHERE tenant_id = %(tenant_id)s
+    GROUP BY document_id, document_name, source, doc_type, company, financial_year
+    ORDER BY MIN(upload_date) DESC
+"""
+
+DELETE_DOCUMENT = """
+    DELETE FROM documents
+    WHERE document_id = %(document_id)s AND tenant_id = %(tenant_id)s
+"""

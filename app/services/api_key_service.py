@@ -35,9 +35,7 @@ def _bcrypt_hash(value: str) -> str:
 
 
 class ApiKeyService:
-    def create_key(
-        self, name: str, role: str, tenant_id: str
-    ) -> tuple[str, ApiKeyCreatedResponse]:
+    def create_key(self, name: str, role: str, tenant_id: str) -> tuple[str, ApiKeyCreatedResponse]:
         """Generate a new API key, persist it, and return (plaintext_key, response).
 
         The plaintext key is returned exactly once. After this call it is unrecoverable.

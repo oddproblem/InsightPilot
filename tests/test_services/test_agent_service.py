@@ -23,7 +23,16 @@ async def test_run_returns_response_with_correct_shape(_patch_config: None) -> N
         "output_tokens": 10,
     }
 
-    with patch("app.graph.nodes.ChatOpenAI"):
+    with (
+        patch("app.graph.nodes.ChatOpenAI"),
+        patch("app.services.agent_service.db_conn") as mock_db,
+    ):
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = []
+        mock_db.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value = (
+            mock_cursor
+        )
+
         service = AgentService(mock_graph)
         result = await service.run(
             session_id="svc-test-session",
@@ -41,6 +50,12 @@ async def test_run_returns_response_with_correct_shape(_patch_config: None) -> N
 @pytest.mark.asyncio
 async def test_get_session_returns_none_for_missing(_patch_config: None) -> None:
     mock_graph = MagicMock()
-    service = AgentService(mock_graph)
-    result = await service.get_session("nonexistent-session-xyz", "default")
+    with patch("app.services.agent_service.db_conn") as mock_db:
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
+        mock_db.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value = (
+            mock_cursor
+        )
+        service = AgentService(mock_graph)
+        result = await service.get_session("nonexistent-session-xyz", "default")
     assert result is None

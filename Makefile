@@ -1,6 +1,6 @@
 .PHONY: up down dev build install migrate create-key revoke-key test test-verbose lint typecheck clean format help
 
-APP_NAME = langgraph-fastapi-starter
+APP_NAME = insightpilot
 PYTHON = python3
 
 help: ## Show available targets
