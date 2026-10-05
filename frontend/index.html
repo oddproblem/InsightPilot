@@ -61,30 +61,30 @@
           </svg>
           Document Corpus
         </h2>
-        <span class="badge-status" id="doc-count-badge">3 Docs</span>
+        <span class="badge-status" id="doc-count-badge">0 Docs</span>
       </div>
 
       <!-- Drag & Drop Ingestion -->
       <section aria-labelledby="upload-heading">
-        <div class="dropzone" id="file-dropzone" role="button" tabindex="0" aria-label="Drop 10-K or financial text report here">
+        <div class="dropzone" id="file-dropzone" role="button" tabindex="0" aria-label="Drop financial document report here">
           <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
           <div class="dropzone-title" id="upload-heading">Upload Financial Filing</div>
-          <div class="dropzone-hint">Drag & drop PDF, TXT, or MD (max 20MB)</div>
-          <input type="file" id="file-picker-input" class="file-input" accept=".txt,.pdf,.md">
+          <div class="dropzone-hint">Drag & drop PDF, TXT, DOCX, or MD (max 20MB)</div>
+          <input type="file" id="file-picker-input" class="file-input" accept=".pdf,.txt,.docx,.md">
         </div>
 
         <div class="upload-meta" id="upload-meta-fields">
           <div class="input-group">
             <label class="input-label" for="doc-company-input">Company Name</label>
-            <input type="text" id="doc-company-input" class="input-control" placeholder="e.g. Acme Corp, Apple, Microsoft">
+            <input type="text" id="doc-company-input" class="input-control" placeholder="e.g. MedTech Global, Alphabet">
           </div>
           <div class="input-group">
             <label class="input-label" for="doc-year-input">Financial Period</label>
-            <input type="text" id="doc-year-input" class="input-control" placeholder="e.g. FY2025, Q4 2024">
+            <input type="text" id="doc-year-input" class="input-control" placeholder="e.g. Q3 2025, FY2024">
           </div>
           <button class="btn btn-primary btn-sm" id="btn-submit-upload" style="margin-top: 0.35rem; justify-content: center;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -101,7 +101,7 @@
           Active Tenant Index
         </div>
         <div class="doc-list" id="documents-container" role="list">
-          <!-- Dynamically populated doc cards -->
+          <!-- Dynamically populated from GET /v1/documents -->
         </div>
       </section>
     </aside>
@@ -144,7 +144,7 @@
               InsightPilot Financial Reasoning Agent
             </h2>
             <p>
-              I am an autonomous document intelligence assistant designed for financial analysis (10-K, 10-Q, quarterly earnings, and balance sheets).
+              I am an AI document intelligence assistant designed for financial analysis (10-K, 10-Q, quarterly earnings, and balance sheets).
             </p>
             <p>
               I route queries through an intelligent multi-stage reasoning pipeline: classifying intent, retrieving vector evidence with strict tenant isolation, evaluating math expressions via a safe calculator, and verifying citations line-by-line before generation.
@@ -155,20 +155,17 @@
             Recommended benchmark inquiries:
           </div>
           <div class="quick-prompts" id="quick-prompt-chips">
-            <button class="prompt-chip" data-prompt="Why did operating margin decline?">
-              📉 Why did operating margin decline?
+            <button class="prompt-chip" data-prompt="What was total revenue and operating margin in the uploaded report?">
+              📊 Revenue & Operating Margin
             </button>
-            <button class="prompt-chip" data-prompt="Calculate the CAGR from 2022 to 2025 given initial revenue of $30B and final revenue of $42.5B.">
-              🧮 Calculate CAGR 2022-2025 ($30B to $42.5B)
+            <button class="prompt-chip" data-prompt="Calculate the CAGR from 2022 to 2025 given initial revenue of 30.0 and final revenue of 48.0.">
+              🧮 Calculate CAGR (30.0 to 48.0 over 3 years)
             </button>
-            <button class="prompt-chip" data-prompt="What was revenue in FY2025?">
-              📊 What was revenue in FY2025?
+            <button class="prompt-chip" data-prompt="Summarize the balance sheet and cash position from the uploaded document.">
+              📈 Balance Sheet & Cash Position
             </button>
-            <button class="prompt-chip" data-prompt="Compare revenue growth between 2024 and 2025.">
-              ⚖️ Compare revenue growth 2024 vs 2025
-            </button>
-            <button class="prompt-chip" data-prompt="Is there enough information to answer what the CEO bonus was in 2025?">
-              🛡️ Test Hallucination Refusal (CEO Bonus)
+            <button class="prompt-chip" data-prompt="Is there enough information in the uploaded documents to answer what the CEO bonus was?">
+              🛡️ Test Hallucination Defense (Missing Data)
             </button>
           </div>
         </div>

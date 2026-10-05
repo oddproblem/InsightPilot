@@ -100,3 +100,27 @@ async def list_api_keys(
                 request_id=request_id,
             ).model_dump(),
         ) from e
+
+
+@router.get("/v1/auth/dev-key", include_in_schema=False)
+async def get_or_create_dev_key() -> dict[str, str]:
+    """Development helper: creates an active key for local browser UI testing.
+
+    Disabled in production.
+    """
+    from app.config import config
+
+    if config.is_production:
+        raise HTTPException(
+            status_code=404,
+            detail=ErrorResponse(
+                code="NOT_FOUND",
+                message="Endpoint not available in production.",
+            ).model_dump(),
+        )
+    plaintext, _response = api_key_service.create_key(
+        name="frontend-dev-session",
+        role="admin",
+        tenant_id="default",
+    )
+    return {"api_key": plaintext, "tenant_id": "default"}

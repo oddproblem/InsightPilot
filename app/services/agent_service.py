@@ -16,7 +16,14 @@ from app.db.queries import (
     INSERT_MESSAGE,
 )
 from app.graph.state import AgentState
-from app.models.responses import MessageResponse, RunAgentResponse, SessionResponse, TokenUsage
+from app.models.responses import (
+    CitationItem,
+    MessageResponse,
+    RunAgentResponse,
+    SessionResponse,
+    TokenUsage,
+    ToolTraceItem,
+)
 
 
 class AgentService:
@@ -149,6 +156,32 @@ class AgentService:
                     {"session_id": session_id, "tenant_id": tenant_id},
                 )
 
+        # Extract real citations from graph state
+        raw_citations = result.get("citations", [])
+        citations = [
+            CitationItem(
+                source=c.get("source", "Unknown"),
+                snippet=c.get("snippet", ""),
+                verified=bool(c.get("verified", False)),
+                page=c.get("page"),
+            )
+            for c in raw_citations
+            if isinstance(c, dict)
+        ]
+
+        # Extract real tool execution results from graph state
+        raw_tools = result.get("tool_results", [])
+        tools = [
+            ToolTraceItem(
+                tool_name=t.get("tool_name", "unknown"),
+                tool_input=t.get("tool_input", {}) if isinstance(t.get("tool_input"), dict) else {},
+                output=str(t.get("output", "")),
+                status=str(t.get("status", "ok")),
+            )
+            for t in raw_tools
+            if isinstance(t, dict)
+        ]
+
         return RunAgentResponse(
             session_id=session_id,
             response=final_response,
@@ -157,6 +190,10 @@ class AgentService:
                 input_tokens=result.get("input_tokens", 0),
                 output_tokens=result.get("output_tokens", 0),
             ),
+            route=result.get("route"),
+            confidence=result.get("confidence"),
+            citations=citations,
+            tools=tools,
         )
 
     async def get_session(

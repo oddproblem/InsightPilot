@@ -800,3 +800,42 @@ body {
     display: none;
   }
 }
+
+/* Real Error & Loading States */
+.assistant-card.error-state {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.pill-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--text-rose);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.system-notice-error {
+  font-size: 0.75rem;
+  color: var(--text-rose);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+}
+
+.upload-loading-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

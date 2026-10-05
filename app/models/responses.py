@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TokenUsage(BaseModel):
@@ -9,11 +9,29 @@ class TokenUsage(BaseModel):
     output_tokens: int
 
 
+class CitationItem(BaseModel):
+    source: str
+    snippet: str
+    verified: bool = False
+    page: int | None = None
+
+
+class ToolTraceItem(BaseModel):
+    tool_name: str
+    tool_input: dict[str, Any] | str = Field(default_factory=dict)
+    output: str = ""
+    status: str = "ok"
+
+
 class RunAgentResponse(BaseModel):
     session_id: str
     response: str
     run_id: str
     usage: TokenUsage
+    route: str | None = None
+    confidence: str | None = None
+    citations: list[CitationItem] = Field(default_factory=list)
+    tools: list[ToolTraceItem] = Field(default_factory=list)
 
 
 class ApiKeyCreatedResponse(BaseModel):

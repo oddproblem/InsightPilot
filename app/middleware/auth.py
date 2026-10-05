@@ -25,6 +25,7 @@ _PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("GET", "/style.css"),
     ("GET", "/app.js"),
     ("GET", "/favicon.ico"),
+    ("GET", "/v1/auth/dev-key"),
 }
 
 # Routes that require admin role (checked after auth passes)
