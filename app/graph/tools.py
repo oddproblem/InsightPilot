@@ -151,7 +151,10 @@ def document_search(
     tenant_id = _tenant_ctx.get()
 
     try:
-        openai_client = OpenAI(api_key=config.embedding_api_key)
+        kwargs: dict[str, Any] = {"api_key": config.embedding_api_key}
+        if config.embedding_base_url:
+            kwargs["base_url"] = config.embedding_base_url
+        openai_client = OpenAI(**kwargs)
         embed_resp = openai_client.embeddings.create(
             input=query,
             model=config.embedding_model,

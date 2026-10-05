@@ -101,8 +101,13 @@ class AppConfig(BaseSettings):
 
     @property
     def embedding_api_key(self) -> str:
-        """API key used for embedding generation (always OpenAI-compatible)."""
-        return self.openai_api_key
+        """API key used for embedding generation (OpenAI or OpenRouter)."""
+        return self.openrouter_api_key or self.openai_api_key
+
+    @property
+    def embedding_base_url(self) -> str | None:
+        """Base URL for embeddings API calls (None for direct OpenAI)."""
+        return self.openrouter_base_url if self.openrouter_api_key else None
 
     model_config = {"env_file": ".env", "case_sensitive": False}
 

@@ -13,9 +13,15 @@ from app.config import config
 class EmbeddingsService:
     """Service for generating dense vector embeddings via an OpenAI-compatible API."""
 
-    def __init__(self, api_key: str | None = None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str | None = None,
+        base_url: str | None = None,
+    ) -> None:
         self.api_key = api_key or config.embedding_api_key
         self.model = model or config.embedding_model
+        self.base_url = base_url or config.embedding_base_url
         self._client: OpenAI | None = None
 
     @property
@@ -24,9 +30,13 @@ class EmbeddingsService:
             if not self.api_key:
                 raise RuntimeError(
                     "No embedding API key configured. "
-                    "Set OPENAI_API_KEY to enable document ingestion and retrieval."
+                    "Set OPENAI_API_KEY or OPENROUTER_API_KEY to enable "
+                    "document ingestion and retrieval."
                 )
-            self._client = OpenAI(api_key=self.api_key)
+            if self.base_url:
+                self._client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            else:
+                self._client = OpenAI(api_key=self.api_key)
         return self._client
 
     def embed_query(self, query: str) -> list[float]:
