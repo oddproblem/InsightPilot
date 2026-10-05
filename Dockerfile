@@ -10,8 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 FROM base AS builder
-COPY pyproject.toml .
-RUN pip install --upgrade pip && pip install -e ".[prod]"
+COPY pyproject.toml README.md LICENSE ./
+COPY app ./app
+RUN pip install --upgrade pip && pip install ".[prod]"
 
 FROM base AS production
 COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
@@ -22,9 +23,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD python scripts/health_check.py
 
 EXPOSE 8000
-CMD ["gunicorn", "app.main:app", \
-     "--workers", "4", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--bind", "0.0.0.0:8000", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-"]
+CMD ["sh", "-c", "gunicorn app.main:app --workers ${WEB_CONCURRENCY:-2} --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000} --access-logfile - --error-logfile -"]

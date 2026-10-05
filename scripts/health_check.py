@@ -7,14 +7,16 @@ Usage:
     python scripts/health_check.py
 """
 
+import os
 import sys
 import urllib.error
 import urllib.request
 
 
 def main() -> int:
+    port = os.getenv("PORT", "8000")
     try:
-        with urllib.request.urlopen("http://localhost:8000/health", timeout=5) as resp:
+        with urllib.request.urlopen(f"http://localhost:{port}/health", timeout=5) as resp:
             import json
 
             body = json.loads(resp.read())
