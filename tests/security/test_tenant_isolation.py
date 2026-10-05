@@ -434,3 +434,135 @@ def test_api_key_revocation_enforces_tenant_isolation(_patch_config: None) -> No
         revoked_by_owner = service.revoke_key(key_id=key_b, tenant_id="tenant-b")
         assert revoked_by_owner is True
         assert db.keys[(key_b, "tenant-b")]["revoked_at"] is not None
+
+
+def _load_migration_003() -> Any:
+    import importlib.util
+    from pathlib import Path
+
+    migration_path = (
+        Path(__file__).resolve().parents[2]
+        / "migrations"
+        / "versions"
+        / "003_messages_tenant_id.py"
+    )
+    spec = importlib.util.spec_from_file_location("migration_003", migration_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_migration_003_upgrade_downgrade_structure() -> None:
+    """Migration 003 must backfill from agent_sessions, validate 0 nulls, and set NOT NULL."""
+    migration = _load_migration_003()
+    assert migration.revision == "003"
+    assert migration.down_revision == "002"
+
+    executed_sqls: list[str] = []
+
+    with patch("alembic.op.execute") as mock_exec:
+        mock_exec.side_effect = lambda sql: executed_sqls.append(str(sql))
+        migration.upgrade()
+
+    all_sql = "\n".join(executed_sqls)
+
+    # 1. Column must be added as nullable initially without DEFAULT 'default'
+    assert "ADD COLUMN tenant_id TEXT" in all_sql
+    assert "DEFAULT 'default'" not in all_sql
+
+    # 2. Must join on agent_sessions to backfill tenant_id
+    assert "FROM agent_sessions s" in all_sql
+    assert "m.session_id = s.session_id" in all_sql
+    assert "m.tenant_id IS NULL" in all_sql
+
+    # 3. Must check for ambiguous session mappings across multiple tenants
+    assert "COUNT(DISTINCT tenant_id) > 1" in all_sql
+
+    # 4. Must check for orphaned messages with unmapped tenant_id
+    assert "WHERE tenant_id IS NULL" in all_sql
+
+    # 5. Must alter column to NOT NULL
+    assert "ALTER COLUMN tenant_id SET NOT NULL" in all_sql
+
+    # 6. Must add composite indexes
+    assert "CREATE INDEX messages_tenant_session_idx" in all_sql
+    assert "CREATE INDEX messages_tenant_created_idx" in all_sql
+
+    # Downgrade check
+    executed_downgrade: list[str] = []
+    with patch("alembic.op.execute") as mock_exec_down:
+        mock_exec_down.side_effect = lambda sql: executed_downgrade.append(str(sql))
+        migration.downgrade()
+
+    down_sql = "\n".join(executed_downgrade)
+    assert "DROP INDEX IF EXISTS messages_tenant_created_idx" in down_sql
+    assert "DROP INDEX IF EXISTS messages_tenant_session_idx" in down_sql
+    assert "ALTER TABLE agent_messages DROP COLUMN IF EXISTS tenant_id" in down_sql
+
+
+def test_migration_backfill_logic_simulation() -> None:
+    """Simulate migration backfill logic on existing data."""
+
+    def run_backfill(
+        sessions_table: list[dict[str, str]],
+        messages_table: list[dict[str, str | None]],
+    ) -> None:
+        # Step 1: Check ambiguous sessions mapping to multiple tenants
+        unmapped_sids = {m["session_id"] for m in messages_table if m.get("tenant_id") is None}
+        sessions_by_sid: dict[str, set[str]] = {}
+        for s in sessions_table:
+            sid = s["session_id"]
+            if sid in unmapped_sids:
+                sessions_by_sid.setdefault(sid, set()).add(s["tenant_id"])
+
+        ambiguous = [sid for sid, tenants in sessions_by_sid.items() if len(tenants) > 1]
+        if ambiguous:
+            raise RuntimeError(
+                f"Migration 003 failed: {len(ambiguous)} session_id(s) map to multiple tenants."
+            )
+
+        # Step 2: Backfill tenant_id from matching session
+        sid_to_tenant = {s["session_id"]: s["tenant_id"] for s in sessions_table}
+        for m in messages_table:
+            if m.get("tenant_id") is None and m["session_id"] in sid_to_tenant:
+                m["tenant_id"] = sid_to_tenant[m["session_id"]]
+
+        # Step 3: Check for remaining unmapped / orphaned rows
+        orphans = [m for m in messages_table if m.get("tenant_id") is None]
+        if orphans:
+            raise RuntimeError(
+                f"Migration 003 failed: {len(orphans)} message(s) have no corresponding session."
+            )
+
+    # Case 1: Valid existing messages mapped to tenant-specific sessions
+    sessions = [
+        {"session_id": "sid-alpha", "tenant_id": "tenant-alpha"},
+        {"session_id": "sid-beta", "tenant_id": "tenant-beta"},
+    ]
+    messages: list[dict[str, str | None]] = [
+        {"id": "m1", "session_id": "sid-alpha", "tenant_id": None},
+        {"id": "m2", "session_id": "sid-beta", "tenant_id": None},
+    ]
+    run_backfill(sessions, messages)
+    assert messages[0]["tenant_id"] == "tenant-alpha"
+    assert messages[1]["tenant_id"] == "tenant-beta"
+
+    # Case 2: Orphaned messages with no corresponding session must FAIL
+    orphan_messages: list[dict[str, str | None]] = [
+        {"id": "m3", "session_id": "sid-unregistered", "tenant_id": None}
+    ]
+    with pytest.raises(RuntimeError, match="no corresponding session"):
+        run_backfill(sessions, orphan_messages)
+
+    # Case 3: Ambiguous session ID across multiple tenants must FAIL
+    ambiguous_sessions = [
+        {"session_id": "sid-shared", "tenant_id": "tenant-1"},
+        {"session_id": "sid-shared", "tenant_id": "tenant-2"},
+    ]
+    ambiguous_messages: list[dict[str, str | None]] = [
+        {"id": "m4", "session_id": "sid-shared", "tenant_id": None}
+    ]
+    with pytest.raises(RuntimeError, match="multiple tenants"):
+        run_backfill(ambiguous_sessions, ambiguous_messages)
+
