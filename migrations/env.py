@@ -18,10 +18,10 @@ from app.config import config as app_cfg
 database_url = os.environ.get("DATABASE_URL") or app_cfg.database_url
 if database_url:
     if database_url.startswith("postgresql://"):
-        db_url_alembic = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        db_url_alembic = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
     else:
         db_url_alembic = database_url
-    config.set_main_option("sqlalchemy.url", db_url_alembic)
+    config.set_main_option("sqlalchemy.url", db_url_alembic.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:

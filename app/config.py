@@ -5,12 +5,13 @@
 #
 # Never read os.environ directly in any other file. All config lives here.
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 
 class AppConfig(BaseSettings):
     # ─── Database ─────────────────────────────────────────────────────────────
+    database_url_override: str | None = Field(default=None, validation_alias="database_url")
     postgres_host: str = "localhost"  # POSTGRES_HOST
     postgres_port: int = 5432  # POSTGRES_PORT
     postgres_db: str = "agentdb"  # POSTGRES_DB
@@ -63,6 +64,8 @@ class AppConfig(BaseSettings):
 
     @property
     def database_url(self) -> str:
+        if self.database_url_override:
+            return self.database_url_override
         return (
             f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
